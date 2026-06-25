@@ -877,4 +877,71 @@ E1 updated`);
       await expect(fs.access(changeDir)).resolves.not.toThrow();
     });
   });
+
+  describe('arch apply integration', () => {
+    it('patches C4 layers when the change has an arch/ folder', async () => {
+      const changeName = 'arch-feature';
+      const changeDir = path.join(tempDir, 'openspec', 'changes', changeName);
+      const changeArchDir = path.join(changeDir, 'arch');
+      const changeArchBaseDir = path.join(changeDir, 'arch', '.base');
+
+      // Set up main arch dir with base content
+      const mainArchDir = path.join(tempDir, 'openspec', 'arch');
+      await fs.mkdir(mainArchDir, { recursive: true });
+      await fs.mkdir(path.join(mainArchDir, 'decisions'), { recursive: true });
+
+      const baseContent = `workspace "Base" {
+
+    model {
+        # initial content
+    }
+
+    views {
+        theme default
+    }
+
+}
+`;
+      await fs.writeFile(path.join(mainArchDir, 'c2.dsl'), baseContent);
+
+      // Set up change arch folder: modified content + base snapshot
+      await fs.mkdir(changeArchBaseDir, { recursive: true });
+      await fs.writeFile(path.join(changeArchBaseDir, 'c2.dsl'), baseContent);
+
+      const modifiedContent = `workspace "Base" {
+
+    model {
+        # initial content
+        newSystem = softwareSystem "New System"
+    }
+
+    views {
+        theme default
+    }
+
+}
+`;
+      await fs.writeFile(path.join(changeArchDir, 'c2.dsl'), modifiedContent);
+
+      // Archive the change
+      await archiveCommand.execute(changeName, { yes: true });
+
+      // Verify main arch was updated
+      const patchedContent = await fs.readFile(path.join(mainArchDir, 'c2.dsl'), 'utf-8');
+      expect(patchedContent).toContain('newSystem = softwareSystem "New System"');
+    });
+
+    it('archives cleanly when the change has no arch/ folder', async () => {
+      const changeName = 'no-arch-change';
+      const changeDir = path.join(tempDir, 'openspec', 'changes', changeName);
+      await fs.mkdir(changeDir, { recursive: true });
+
+      // No arch/ folder — archive should succeed without errors
+      await archiveCommand.execute(changeName, { yes: true });
+
+      const archiveDir = path.join(tempDir, 'openspec', 'changes', 'archive');
+      const archives = await fs.readdir(archiveDir);
+      expect(archives.some(a => a.includes(changeName))).toBe(true);
+    });
+  });
 });

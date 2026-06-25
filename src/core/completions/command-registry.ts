@@ -759,4 +759,16 @@ export const COMMAND_REGISTRY: CommandDefinition[] = [
       },
     ],
   },
+  {
+    name: 'arch',
+    description: 'Manage architecture tracking (C4 diagrams and ADRs)',
+    flags: [],
+    subcommands: [
+      {
+        name: 'init',
+        description: 'Initialize the openspec/arch/ directory with Structurizr stubs',
+        flags: [],
+      },
+    ],
+  },
 ];

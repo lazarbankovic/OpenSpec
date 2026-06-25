@@ -91,6 +91,72 @@ When OpenSpec needs a schema, it checks in this order:
 
 ---
 
+## Built-in Schemas
+
+OpenSpec ships with two schemas:
+
+### `spec-driven` (default)
+
+The standard workflow for capturing requirements and implementing changes. Artifacts: `proposal → specs → design → tasks`.
+
+```yaml
+# openspec/config.yaml
+schema: spec-driven   # or omit — this is the default
+```
+
+### `arch-driven`
+
+Extends `spec-driven` with **C4 architecture tracking** and **Architecture Decision Records (ADRs)**. Use this when you want your AI assistant to keep C4 diagrams in sync with code changes and maintain a decision log.
+
+**What it adds:**
+
+- An optional `arch` artifact that checks out Structurizr DSL files, edits the right C4 layers, and prompts for an ADR when a meaningful architectural decision is detected
+- ADR guardrails on the proposal — the AI reads `openspec/arch/decisions/` and stops at the first conflict before generating any artifact
+- `openspec archive` merges patched `.dsl` files back into `openspec/arch/` and sequences new ADRs automatically
+
+**Set up:**
+
+```bash
+# 1. Initialize the arch folder with C4 stubs
+openspec arch init
+
+# 2. Enable the schema in your project config
+# openspec/config.yaml
+schema: arch-driven
+```
+
+**What gets created by `openspec arch init`:**
+
+```text
+openspec/arch/
+├── c1.dsl          ← System Context diagram
+├── c2.dsl          ← Container diagram
+├── c3.dsl          ← Component diagram
+├── c4.dsl          ← Code diagram
+└── decisions/
+    ├── .gitkeep
+    └── archive/
+        └── .gitkeep
+```
+
+Each `.dsl` file is a valid [Structurizr DSL](https://docs.structurizr.com/dsl) stub. Edit them in the Structurizr UI or let your AI assistant update them as part of the change workflow.
+
+**Per-change arch folder (created by the AI when editing architecture):**
+
+```text
+openspec/changes/<name>/
+└── arch/
+    ├── c2.dsl          ← AI edits this
+    ├── c3.dsl
+    └── .base/
+        ├── c2.dsl      ← snapshot at checkout; used for diff at archive time
+        └── c3.dsl
+```
+
+**ADRs** live at `openspec/arch/decisions/NNNN-<slug>.md`. To create one, ask your AI: *"add an ADR for choosing PostgreSQL over SQLite"*. The file is written into the change folder and sequenced automatically on `openspec archive`. To supersede an old decision, add a `Supersedes: ADR-NNNN` line to the new ADR's header — the old one is moved to `decisions/archive/` at archive time.
+
+---
+
 ## Custom Schemas
 
 When project config isn't enough, create your own schema with a completely custom workflow. Custom schemas live in your project's `openspec/schemas/` directory and are version-controlled with your code.

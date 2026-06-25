@@ -152,6 +152,7 @@ What would you like to do?
 - Update task checkbox immediately after completing each task
 - Pause on errors, blockers, or unclear requirements - don't guess
 - Use contextFiles from CLI output, don't assume specific file names
+- **User-initiated ADR (arch-driven schema only)**: If the user asks you to create an ADR (e.g. "add an ADR for X"), create a Markdown file in \`changes/<name>/arch/decisions/\` with sections: **Title**, **Status** (Proposed), **Context**, **Decision**, **Consequences**. Optionally add a \`Supersedes: ADR-NNNN\` header line if it overrides a prior decision. The \`openspec archive\` command will sequence and apply it automatically.
 
 **Fluid Workflow Integration**
 
@@ -312,6 +313,7 @@ What would you like to do?
 - Update task checkbox immediately after completing each task
 - Pause on errors, blockers, or unclear requirements - don't guess
 - Use contextFiles from CLI output, don't assume specific file names
+- **User-initiated ADR (arch-driven schema only)**: If the user asks you to create an ADR (e.g. "add an ADR for X"), create a Markdown file in \`changes/<name>/arch/decisions/\` with sections: **Title**, **Status** (Proposed), **Context**, **Decision**, **Consequences**. Optionally add a \`Supersedes: ADR-NNNN\` header line if it overrides a prior decision. The \`openspec archive\` command will sequence and apply it automatically.
 
 **Fluid Workflow Integration**
 

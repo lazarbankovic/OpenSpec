@@ -19,6 +19,7 @@ import { CompletionCommand } from '../commands/completion.js';
 import { FeedbackCommand } from '../commands/feedback.js';
 import { registerConfigCommand } from '../commands/config.js';
 import { registerSchemaCommand } from '../commands/schema.js';
+import { createArchCommand } from '../commands/arch.js';
 import { registerStoreCommand } from '../commands/store.js';
 import { registerDoctorCommand } from '../commands/doctor.js';
 import { registerContextCommand } from '../commands/context.js';
@@ -349,6 +350,7 @@ registerStoreCommand(program);
 registerDoctorCommand(program);
 registerContextCommand(program);
 registerWorksetCommand(program);
+program.addCommand(createArchCommand());
 
 // Top-level validate command
 program

@@ -64,6 +64,12 @@ openspec/
 │       └── specs/      # Delta specs (what's changing)
 │           └── <domain>/
 │               └── spec.md
+├── arch/               # C4 diagrams + ADRs (arch-driven schema only)
+│   ├── c1.dsl          # System Context
+│   ├── c2.dsl          # Containers
+│   ├── c3.dsl          # Components
+│   ├── c4.dsl          # Code
+│   └── decisions/      # Architecture Decision Records
 └── config.yaml         # Project configuration (optional)
 ```
 

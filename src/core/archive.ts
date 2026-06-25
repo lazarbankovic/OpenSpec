@@ -18,6 +18,13 @@ import {
   writeUpdatedSpec,
   type SpecUpdate,
 } from './specs-apply.js';
+import {
+  findArchUpdates,
+  applyArchUpdate,
+  findNewAdrs,
+  applyAdrs,
+  ArchConflictError,
+} from './arch-apply.js';
 
 async function listActiveChangeNames(changesDir: string): Promise<string[]> {
   try {
@@ -54,6 +61,8 @@ interface ArchiveResult {
   path: string;
   specsUpdated: boolean;
   totals?: { added: number; modified: number; removed: number; renamed: number };
+  archLayersPatched?: number;
+  adrsAdded?: number;
 }
 
 /**
@@ -481,6 +490,36 @@ export class ArchiveCommand {
       }
     }
 
+    // Apply arch deltas (C4 layers + ADRs) if the change has an arch/ folder
+    const mainArchDir = path.join(root.path, 'openspec', 'arch');
+    let archLayersPatched = 0;
+    let adrsAdded = 0;
+
+    try {
+      const archUpdates = await findArchUpdates(changeDir, mainArchDir);
+      if (archUpdates.length > 0) {
+        for (const update of archUpdates) {
+          await applyArchUpdate(update);
+          archLayersPatched++;
+        }
+        const newAdrs = await findNewAdrs(changeDir);
+        adrsAdded = newAdrs.length;
+        await applyAdrs(newAdrs, mainArchDir);
+        if (!json && archLayersPatched > 0) {
+          console.log(`Arch: patched ${archLayersPatched} layer(s), added ${adrsAdded} ADR(s).`);
+        }
+      }
+    } catch (err) {
+      if (err instanceof ArchConflictError) {
+        throw new ArchiveBlockedError(
+          'arch_conflict',
+          err.message,
+          `Resolve the conflict in ${err.sourcePath}, then re-run 'openspec archive ${changeName}'.`
+        );
+      }
+      throw err;
+    }
+
     // Create archive directory with date prefix
     const archiveName = `${this.getArchiveDate()}-${changeName}`;
     const archivePath = path.join(archiveDir, archiveName);
@@ -515,6 +554,8 @@ export class ArchiveCommand {
       path: archivePath,
       specsUpdated,
       ...(totals ? { totals } : {}),
+      ...(archLayersPatched > 0 ? { archLayersPatched } : {}),
+      ...(adrsAdded > 0 ? { adrsAdded } : {}),
     };
   }
 

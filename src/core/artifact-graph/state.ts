@@ -20,7 +20,10 @@ export function detectCompleted(graph: ArtifactGraph, changeDir: string): Comple
   }
 
   for (const artifact of graph.getAllArtifacts()) {
-    if (isArtifactComplete(artifact.generates, changeDir)) {
+    if (artifact.optional && !isArtifactComplete(artifact.generates, changeDir)) {
+      // Optional artifact with no files — treat as complete so it doesn't block the change
+      completed.add(artifact.id);
+    } else if (isArtifactComplete(artifact.generates, changeDir)) {
       completed.add(artifact.id);
     }
   }
