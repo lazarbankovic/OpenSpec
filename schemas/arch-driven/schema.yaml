@@ -159,25 +159,21 @@ artifacts:
     instruction: |
       Update the C4 architecture diagrams and record architectural decisions for this change.
 
-      STEP 1 — DETERMINE SCOPE
-      Based on the proposal and design, decide which C4 layers are affected:
-      - C2 (containers) and C3 (components) are the default — copy both unless clearly irrelevant
-      - Add C1 (system context) only if the change adds/removes external systems or changes product scope
-      - Add C4 (code) only if class/function-level design is explicitly part of the change
+      STEP 1 — CHECKOUT
+      Copy `c4architecture.dsl` from `openspec/arch/` into the change folder:
+        - changes/<name>/arch/c4architecture.dsl   (you will edit this)
+        - changes/<name>/arch/.base/c4architecture.dsl   (leave untouched — used for diff at archive time)
 
-      STEP 2 — CHECKOUT LAYERS
-      For each affected layer, copy the current file from openspec/arch/<layer>.dsl to:
-        - changes/<name>/arch/<layer>.dsl   (you will edit this)
-        - changes/<name>/arch/.base/<layer>.dsl   (leave untouched — used for diff at archive time)
-
-      If openspec/arch/ does not exist, stop and prompt:
+      If `openspec/arch/c4architecture.dsl` does not exist, stop and prompt:
         "openspec/arch/ has not been initialized. Run `openspec arch init` first."
 
-      STEP 3 — EDIT DIAGRAMS
-      Edit the copied .dsl files in the change folder to reflect the architectural changes.
-      The files must remain valid Structurizr DSL at all times so the user can open them visually.
+      STEP 2 — EDIT DIAGRAMS
+      Edit `changes/<name>/arch/c4architecture.dsl` to reflect the architectural changes
+      introduced by this change. Add, remove, or update model elements and views as needed.
+      The file must remain valid Structurizr DSL at all times so the user can open it in
+      the Archt viewer or any compatible Structurizr tool.
 
-      STEP 4 — ADR DECISION
+      STEP 3 — ADR DECISION
       Review what was changed architecturally. Ask yourself: does this introduce a new pattern,
       technology, boundary decision, or trade-off where a real alternative existed?
 

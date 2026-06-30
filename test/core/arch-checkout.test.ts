@@ -2,9 +2,11 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
-import { checkoutArchLayers } from '../../src/core/arch-checkout.js';
+import { checkoutArchFile } from '../../src/core/arch-checkout.js';
 
-describe('checkoutArchLayers', () => {
+const ARCH_FILENAME = 'c4architecture.dsl';
+
+describe('checkoutArchFile', () => {
   let tempDir: string;
   let archDir: string;
   let changeDir: string;
@@ -17,61 +19,41 @@ describe('checkoutArchLayers', () => {
     await fs.mkdir(archDir, { recursive: true });
     await fs.mkdir(changeDir, { recursive: true });
 
-    // Write stub structurizr files
-    for (const layer of ['c1', 'c2', 'c3', 'c4']) {
-      await fs.writeFile(
-        path.join(archDir, `${layer}.dsl`),
-        `workspace "${layer.toUpperCase()}" {}`,
-        'utf-8'
-      );
-    }
+    await fs.writeFile(
+      path.join(archDir, ARCH_FILENAME),
+      `workspace "C4 Architecture" {}`,
+      'utf-8'
+    );
   });
 
   afterEach(async () => {
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
-  it('copies specified layers to arch/ and arch/.base/', async () => {
-    await checkoutArchLayers(changeDir, archDir, { layers: ['c2', 'c3'] });
+  it('copies c4architecture.dsl to arch/ and arch/.base/', async () => {
+    await checkoutArchFile(changeDir, archDir);
 
     const archChangeDir = path.join(changeDir, 'arch');
     const baseDir = path.join(archChangeDir, '.base');
 
-    // Both c2 and c3 should exist in arch/ and .base/
-    for (const layer of ['c2', 'c3']) {
-      const archFile = path.join(archChangeDir, `${layer}.dsl`);
-      const baseFile = path.join(baseDir, `${layer}.dsl`);
+    const archContent = await fs.readFile(path.join(archChangeDir, ARCH_FILENAME), 'utf-8');
+    const baseContent = await fs.readFile(path.join(baseDir, ARCH_FILENAME), 'utf-8');
+    const srcContent = `workspace "C4 Architecture" {}`;
 
-      const archContent = await fs.readFile(archFile, 'utf-8');
-      const baseContent = await fs.readFile(baseFile, 'utf-8');
-      const srcContent = `workspace "${layer.toUpperCase()}" {}`;
-
-      expect(archContent).toBe(srcContent);
-      expect(baseContent).toBe(srcContent);
-    }
-  });
-
-  it('does not copy layers that were not requested', async () => {
-    await checkoutArchLayers(changeDir, archDir, { layers: ['c2'] });
-
-    const archChangeDir = path.join(changeDir, 'arch');
-
-    // c1 should NOT be present
-    await expect(
-      fs.access(path.join(archChangeDir, 'c1.dsl'))
-    ).rejects.toThrow();
+    expect(archContent).toBe(srcContent);
+    expect(baseContent).toBe(srcContent);
   });
 
   it('arch/ and .base/ files have identical content', async () => {
-    await checkoutArchLayers(changeDir, archDir, { layers: ['c3'] });
+    await checkoutArchFile(changeDir, archDir);
 
     const archChangeDir = path.join(changeDir, 'arch');
     const archContent = await fs.readFile(
-      path.join(archChangeDir, 'c3.dsl'),
+      path.join(archChangeDir, ARCH_FILENAME),
       'utf-8'
     );
     const baseContent = await fs.readFile(
-      path.join(archChangeDir, '.base', 'c3.dsl'),
+      path.join(archChangeDir, '.base', ARCH_FILENAME),
       'utf-8'
     );
 
@@ -82,16 +64,15 @@ describe('checkoutArchLayers', () => {
     const missingArchDir = path.join(tempDir, 'no-arch');
 
     await expect(
-      checkoutArchLayers(changeDir, missingArchDir, { layers: ['c2'] })
+      checkoutArchFile(changeDir, missingArchDir)
     ).rejects.toThrow(/openspec\/arch\/ does not exist/);
   });
 
-  it('throws when a requested layer file is missing', async () => {
-    // Remove c2 from the arch dir
-    await fs.rm(path.join(archDir, 'c2.dsl'));
+  it('throws when c4architecture.dsl is missing', async () => {
+    await fs.rm(path.join(archDir, ARCH_FILENAME));
 
     await expect(
-      checkoutArchLayers(changeDir, archDir, { layers: ['c2'] })
-    ).rejects.toThrow(/c2\.dsl.*does not exist/);
+      checkoutArchFile(changeDir, archDir)
+    ).rejects.toThrow(/c4architecture\.dsl.*does not exist/);
   });
 });
