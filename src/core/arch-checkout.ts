@@ -1,31 +1,25 @@
 /**
  * Arch Checkout
  *
- * Copies C4 Structurizr layers from the main arch folder into a change folder,
+ * Copies c4architecture.dsl from the main arch folder into a change folder,
  * along with a .base/ snapshot used for diff-and-patch at archive time.
  */
 
 import { promises as fs } from 'fs';
 import path from 'path';
 
-export type C4Layer = 'c1' | 'c2' | 'c3' | 'c4';
-
-export interface ArchCheckoutOptions {
-  layers: C4Layer[];
-}
+const ARCH_FILENAME = 'c4architecture.dsl';
 
 /**
- * Copy the specified C4 layers from archDir into the change's arch/ folder.
+ * Copy c4architecture.dsl from archDir into the change's arch/ folder.
  * Also writes an identical copy to arch/.base/ for use during archive.
  *
  * @param changeDir  Absolute path to the change folder (e.g. openspec/changes/my-change)
  * @param archDir    Absolute path to openspec/arch/
- * @param options    Which layers to check out
  */
-export async function checkoutArchLayers(
+export async function checkoutArchFile(
   changeDir: string,
-  archDir: string,
-  options: ArchCheckoutOptions
+  archDir: string
 ): Promise<void> {
   // Verify arch folder exists
   try {
@@ -45,24 +39,19 @@ export async function checkoutArchLayers(
   await fs.mkdir(archChangeDir, { recursive: true });
   await fs.mkdir(baseDir, { recursive: true });
 
-  for (const layer of options.layers) {
-    const srcFile = path.join(archDir, `${layer}.dsl`);
+  const srcFile = path.join(archDir, ARCH_FILENAME);
 
-    // Verify the layer file exists in the arch folder
-    try {
-      await fs.access(srcFile);
-    } catch {
-      throw new Error(
-        `Layer file '${layer}.dsl' does not exist in openspec/arch/. ` +
-          `Run 'openspec arch init' or create the file manually before checking it out.`
-      );
-    }
-
-    const content = await fs.readFile(srcFile, 'utf-8');
-    const destFile = path.join(archChangeDir, `${layer}.dsl`);
-    const baseFile = path.join(baseDir, `${layer}.dsl`);
-
-    await fs.writeFile(destFile, content, 'utf-8');
-    await fs.writeFile(baseFile, content, 'utf-8');
+  try {
+    await fs.access(srcFile);
+  } catch {
+    throw new Error(
+      `Architecture file '${ARCH_FILENAME}' does not exist in openspec/arch/. ` +
+        `Run 'openspec arch init' or create the file manually before checking it out.`
+    );
   }
+
+  const content = await fs.readFile(srcFile, 'utf-8');
+
+  await fs.writeFile(path.join(archChangeDir, ARCH_FILENAME), content, 'utf-8');
+  await fs.writeFile(path.join(baseDir, ARCH_FILENAME), content, 'utf-8');
 }

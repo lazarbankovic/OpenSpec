@@ -55,45 +55,49 @@ ${STORE_SELECTION_GUIDANCE}
 
    **If no tasks file exists:** Proceed without task-related warning.
 
-4. **Assess delta spec sync state**
+4. **Propose verification (if implementation appears complete)**
 
-   Use \`artifactPaths.specs.existingOutputPaths\` from status JSON to check for delta specs. If none exist, proceed without sync prompt.
+   Run this check only when tasks are all complete (or no tasks file) AND delta specs exist.
+   Skip silently if either condition is not met.
 
-   **If delta specs exist:**
-   - Compare each delta spec with its corresponding main spec at \`openspec/specs/<capability>/spec.md\`
-   - Determine what changes would be applied (adds, modifications, removals, renames)
-   - Show a combined summary before prompting
+   Use the **AskUserQuestion tool** to ask:
+   > "All tasks are complete. Would you like to verify that the implementation matches the specs before archiving? This catches any drift between what was built and what was specced."
 
-   **Prompt options:**
-   - If changes needed: "Sync now (recommended)", "Archive without syncing"
-   - If already synced: "Archive now", "Sync anyway", "Cancel"
+   Options: "Yes, run verify first" (recommended), "No, skip verify"
 
-   If user chooses sync, use Task tool (subagent_type: "general-purpose", prompt: "Use Skill tool to invoke openspec-sync-specs for change '<name>'. Delta spec analysis: <include the analyzed delta spec summary>"). Proceed to archive regardless of choice.
+   **If user chooses verify:**
+   Invoke the verify skill using the Task tool:
+   \`\`\`
+   subagent_type: "general-purpose"
+   prompt: "Use Skill tool to invoke openspec-verify-change for change '<name>'. The user is about to archive and wants to confirm implementation matches specs."
+   \`\`\`
+   After verify completes, show the verify summary and ask: "Verify complete. Proceed with archive?"
+   - If user confirms: continue
+   - If user cancels: stop and let them fix issues first
+
+   **If user skips verify:** Continue to next step.
 
 5. **Perform the archive**
 
-   Create an \`archive\` directory under \`planningHome.changesDir\` if it doesn't exist:
+   Run the archive CLI command. It applies delta specs to \`openspec/specs/\`, patches \`openspec/arch/\`, and moves the change to archive — all atomically:
    \`\`\`bash
-   mkdir -p "<planningHome.changesDir>/archive"
+   openspec archive "<name>" --yes
    \`\`\`
 
-   Generate target name using current date: \`YYYY-MM-DD-<change-name>\`
+   The \`--yes\` flag confirms any remaining prompts (incomplete task warnings, spec update confirmation).
+   All prior confirmations (steps 2–4) have already been collected.
 
-   **Check if target already exists:**
-   - If yes: Fail with error, suggest renaming existing archive or using different date
-   - If no: Move \`changeRoot\` to the archive directory
-
-   \`\`\`bash
-   mv "<changeRoot>" "<planningHome.changesDir>/archive/YYYY-MM-DD-<name>"
-   \`\`\`
+   **If the command fails:** Show the full error output and stop. Do not attempt manual recovery.
 
 6. **Display summary**
 
-   Show archive completion summary including:
+   Show archive completion summary combining verify status (from step 4) and CLI output:
    - Change name
    - Schema that was used
-   - Archive location
-   - Whether specs were synced (if applicable)
+   - Archive location (from CLI output)
+   - Verify status (passed / skipped)
+   - Spec sync result (from CLI output: specs updated / no delta specs)
+   - Arch patch result (from CLI output: layers patched / no arch folder)
    - Note about any warnings (incomplete artifacts/tasks)
 
 **Output On Success**
@@ -103,8 +107,25 @@ ${STORE_SELECTION_GUIDANCE}
 
 **Change:** <change-name>
 **Schema:** <schema-name>
-**Archived to:** the archive path derived from \`planningHome.changesDir\`/YYYY-MM-DD-<name>/
-**Specs:** ✓ Synced to main specs (or "No delta specs" or "Sync skipped")
+**Archived to:** changes/archive/YYYY-MM-DD-<name>/
+**Verify:** ✓ Passed
+**Specs:** ✓ Synced to main specs
+**Arch:** ✓ Patched
+
+All artifacts complete. All tasks complete.
+\`\`\`
+
+**Output On Success (Verify Skipped)**
+
+\`\`\`
+## Archive Complete
+
+**Change:** <change-name>
+**Schema:** <schema-name>
+**Archived to:** changes/archive/YYYY-MM-DD-<name>/
+**Verify:** Skipped
+**Specs:** ✓ Synced to main specs (or "No delta specs")
+**Arch:** ✓ Patched (or "No arch folder")
 
 All artifacts complete. All tasks complete.
 \`\`\`
@@ -113,10 +134,8 @@ All artifacts complete. All tasks complete.
 - Always prompt for change selection if not provided
 - Use artifact graph (openspec status --json) for completion checking
 - Don't block archive on warnings - just inform and confirm
-- Preserve .openspec.yaml when moving to archive (it moves with the directory)
-- Show clear summary of what happened
-- If sync is requested, use openspec-sync-specs approach (agent-driven)
-- If delta specs exist, always run the sync assessment and show the combined summary before prompting`,
+- Always use \`openspec archive <name> --yes\` — never use manual \`mv\` or \`mkdir\`; the CLI is the only way specs and arch get applied to the main folders
+- Only propose verify when tasks are all complete AND delta specs exist — skip the prompt otherwise`,
     license: 'MIT',
     compatibility: 'Requires openspec CLI.',
     metadata: { author: 'openspec', version: '1.0' },
@@ -173,45 +192,49 @@ ${STORE_SELECTION_GUIDANCE}
 
    **If no tasks file exists:** Proceed without task-related warning.
 
-4. **Assess delta spec sync state**
+4. **Propose verification (if implementation appears complete)**
 
-   Use \`artifactPaths.specs.existingOutputPaths\` from status JSON to check for delta specs. If none exist, proceed without sync prompt.
+   Run this check only when tasks are all complete (or no tasks file) AND delta specs exist.
+   Skip silently if either condition is not met.
 
-   **If delta specs exist:**
-   - Compare each delta spec with its corresponding main spec at \`openspec/specs/<capability>/spec.md\`
-   - Determine what changes would be applied (adds, modifications, removals, renames)
-   - Show a combined summary before prompting
+   Use the **AskUserQuestion tool** to ask:
+   > "All tasks are complete. Would you like to verify that the implementation matches the specs before archiving? This catches any drift between what was built and what was specced."
 
-   **Prompt options:**
-   - If changes needed: "Sync now (recommended)", "Archive without syncing"
-   - If already synced: "Archive now", "Sync anyway", "Cancel"
+   Options: "Yes, run verify first" (recommended), "No, skip verify"
 
-   If user chooses sync, use Task tool (subagent_type: "general-purpose", prompt: "Use Skill tool to invoke openspec-sync-specs for change '<name>'. Delta spec analysis: <include the analyzed delta spec summary>"). Proceed to archive regardless of choice.
+   **If user chooses verify:**
+   Invoke the verify skill using the Task tool:
+   \`\`\`
+   subagent_type: "general-purpose"
+   prompt: "Use Skill tool to invoke openspec-verify-change for change '<name>'. The user is about to archive and wants to confirm implementation matches specs."
+   \`\`\`
+   After verify completes, show the verify summary and ask: "Verify complete. Proceed with archive?"
+   - If user confirms: continue
+   - If user cancels: stop and let them fix issues first
+
+   **If user skips verify:** Continue to next step.
 
 5. **Perform the archive**
 
-   Create an \`archive\` directory under \`planningHome.changesDir\` if it doesn't exist:
+   Run the archive CLI command. It applies delta specs to \`openspec/specs/\`, patches \`openspec/arch/\`, and moves the change to archive — all atomically:
    \`\`\`bash
-   mkdir -p "<planningHome.changesDir>/archive"
+   openspec archive "<name>" --yes
    \`\`\`
 
-   Generate target name using current date: \`YYYY-MM-DD-<change-name>\`
+   The \`--yes\` flag confirms any remaining prompts (incomplete task warnings, spec update confirmation).
+   All prior confirmations (steps 2–4) have already been collected.
 
-   **Check if target already exists:**
-   - If yes: Fail with error, suggest renaming existing archive or using different date
-   - If no: Move \`changeRoot\` to the archive directory
-
-   \`\`\`bash
-   mv "<changeRoot>" "<planningHome.changesDir>/archive/YYYY-MM-DD-<name>"
-   \`\`\`
+   **If the command fails:** Show the full error output and stop. Do not attempt manual recovery.
 
 6. **Display summary**
 
-   Show archive completion summary including:
+   Show archive completion summary combining verify status (from step 4) and CLI output:
    - Change name
    - Schema that was used
-   - Archive location
-   - Spec sync status (synced / sync skipped / no delta specs)
+   - Archive location (from CLI output)
+   - Verify status (passed / skipped)
+   - Spec sync result (from CLI output: specs updated / no delta specs)
+   - Arch patch result (from CLI output: layers patched / no arch folder)
    - Note about any warnings (incomplete artifacts/tasks)
 
 **Output On Success**
@@ -221,21 +244,25 @@ ${STORE_SELECTION_GUIDANCE}
 
 **Change:** <change-name>
 **Schema:** <schema-name>
-**Archived to:** the archive path derived from \`planningHome.changesDir\`/YYYY-MM-DD-<name>/
+**Archived to:** changes/archive/YYYY-MM-DD-<name>/
+**Verify:** ✓ Passed
 **Specs:** ✓ Synced to main specs
+**Arch:** ✓ Patched
 
 All artifacts complete. All tasks complete.
 \`\`\`
 
-**Output On Success (No Delta Specs)**
+**Output On Success (Verify Skipped)**
 
 \`\`\`
 ## Archive Complete
 
 **Change:** <change-name>
 **Schema:** <schema-name>
-**Archived to:** the archive path derived from \`planningHome.changesDir\`/YYYY-MM-DD-<name>/
-**Specs:** No delta specs
+**Archived to:** changes/archive/YYYY-MM-DD-<name>/
+**Verify:** Skipped
+**Specs:** ✓ Synced to main specs (or "No delta specs")
+**Arch:** ✓ Patched (or "No arch folder")
 
 All artifacts complete. All tasks complete.
 \`\`\`
@@ -247,13 +274,14 @@ All artifacts complete. All tasks complete.
 
 **Change:** <change-name>
 **Schema:** <schema-name>
-**Archived to:** the archive path derived from \`planningHome.changesDir\`/YYYY-MM-DD-<name>/
-**Specs:** Sync skipped (user chose to skip)
+**Archived to:** changes/archive/YYYY-MM-DD-<name>/
+**Verify:** Skipped
+**Specs:** ✓ Synced to main specs
+**Arch:** No arch folder
 
 **Warnings:**
 - Archived with 2 incomplete artifacts
 - Archived with 3 incomplete tasks
-- Delta spec sync was skipped (user chose to skip)
 
 Review the archive if this was not intentional.
 \`\`\`
@@ -264,23 +292,18 @@ Review the archive if this was not intentional.
 ## Archive Failed
 
 **Change:** <change-name>
-**Target:** the archive path derived from \`planningHome.changesDir\`/YYYY-MM-DD-<name>/
-
-Target archive directory already exists.
+**Error:** openspec archive reported: Target archive already exists
 
 **Options:**
-1. Rename the existing archive
-2. Delete the existing archive if it's a duplicate
-3. Wait until a different date to archive
+1. Rename the existing archive manually, then retry
+2. Wait until a different date to archive
 \`\`\`
 
 **Guardrails**
 - Always prompt for change selection if not provided
 - Use artifact graph (openspec status --json) for completion checking
 - Don't block archive on warnings - just inform and confirm
-- Preserve .openspec.yaml when moving to archive (it moves with the directory)
-- Show clear summary of what happened
-- If sync is requested, use the Skill tool to invoke \`openspec-sync-specs\` (agent-driven)
-- If delta specs exist, always run the sync assessment and show the combined summary before prompting`
+- Always use \`openspec archive <name> --yes\` — never use manual \`mv\` or \`mkdir\`; the CLI is the only way specs and arch get applied to the main folders
+- Only propose verify when tasks are all complete AND delta specs exist — skip the prompt otherwise`
   };
 }

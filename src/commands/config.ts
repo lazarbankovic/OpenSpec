@@ -19,7 +19,7 @@ import {
   validateConfig,
   DEFAULT_CONFIG,
 } from '../core/config-schema.js';
-import { CORE_WORKFLOWS, ALL_WORKFLOWS, getProfileWorkflows } from '../core/profiles.js';
+import { CORE_WORKFLOWS, EXTENDED_WORKFLOWS, ALL_WORKFLOWS, getProfileWorkflows } from '../core/profiles.js';
 import { OPENSPEC_DIR_NAME } from '../core/config.js';
 import { hasProjectConfigDrift } from '../core/profile-sync-drift.js';
 import { isPromptCancellationError } from './shared-output.js';
@@ -109,7 +109,14 @@ export function deriveProfileFromWorkflowSelection(selectedWorkflows: string[]):
   const isCoreMatch =
     selectedWorkflows.length === CORE_WORKFLOWS.length &&
     CORE_WORKFLOWS.every((w) => selectedWorkflows.includes(w));
-  return isCoreMatch ? 'core' : 'custom';
+  if (isCoreMatch) return 'core';
+
+  const isExtendedMatch =
+    selectedWorkflows.length === EXTENDED_WORKFLOWS.length &&
+    EXTENDED_WORKFLOWS.every((w) => selectedWorkflows.includes(w));
+  if (isExtendedMatch) return 'extended';
+
+  return 'custom';
 }
 
 /**

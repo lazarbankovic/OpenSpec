@@ -14,6 +14,11 @@ import type { Profile } from './global-config.js';
 export const CORE_WORKFLOWS = ['propose', 'explore', 'apply', 'sync', 'archive'] as const;
 
 /**
+ * Extended workflows — core plus verification and onboarding.
+ */
+export const EXTENDED_WORKFLOWS = [...CORE_WORKFLOWS, 'verify', 'onboard'] as const;
+
+/**
  * All available workflows in the system.
  */
 export const ALL_WORKFLOWS = [
@@ -45,6 +50,9 @@ export function getProfileWorkflows(
 ): readonly string[] {
   if (profile === 'custom') {
     return customWorkflows ?? [];
+  }
+  if (profile === 'extended') {
+    return EXTENDED_WORKFLOWS;
   }
   return CORE_WORKFLOWS;
 }

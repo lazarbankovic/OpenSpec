@@ -4,92 +4,50 @@ import * as path from 'node:path';
 import chalk from 'chalk';
 import { resolveOpenSpecRoot } from '../core/root-selection.js';
 
-// Minimal valid Structurizr DSL stubs for each C4 level
-const STUBS: Record<string, string> = {
-  'c1.dsl': `workspace "System Context" "C1 - System Context diagram" {
+// Single combined Structurizr DSL stub with all C4 views
+const ARCH_FILENAME = 'c4architecture.dsl';
+const ARCH_STUB = `workspace "C4 Architecture" {
 
     model {
-        # Define people and software systems here
+        # Define people, software systems, containers, and components here.
         # Example:
         # user = person "User" "A user of the system"
-        # softwareSystem = softwareSystem "Software System" "Description"
+        # softwareSystem = softwareSystem "Software System" "Description" {
+        #     webApp = container "Web Application" "Delivers the frontend" "Node.js" {
+        #         controller = component "Controller" "Handles requests"
+        #     }
+        #     database = container "Database" "Stores data" "PostgreSQL"
+        #     webApp -> database "Reads/writes"
+        # }
         # user -> softwareSystem "Uses"
     }
 
     views {
-        systemContext softwareSystem "SystemContext" {
-            include *
-            autoLayout
-        }
-
-        theme default
-    }
-
-}
-`,
-  'c2.dsl': `workspace "Containers" "C2 - Container diagram" {
-
-    model {
-        # Define containers (applications, databases, etc.) inside your software system here
-        # Example:
-        # softwareSystem = softwareSystem "Software System" {
-        #     webApp = container "Web Application" "Serves the frontend" "Node.js"
-        #     database = container "Database" "Stores data" "PostgreSQL"
-        #     webApp -> database "Reads from and writes to"
+        # C1 — System Context: people and external systems
+        # systemContext softwareSystem "C1_Context" {
+        #     include *
+        #     autoLayout
         # }
-    }
 
-    views {
-        container softwareSystem "Containers" {
-            include *
-            autoLayout
-        }
-
-        theme default
-    }
-
-}
-`,
-  'c3.dsl': `workspace "Components" "C3 - Component diagram" {
-
-    model {
-        # Define components inside a container here
-        # Example:
-        # softwareSystem = softwareSystem "Software System" {
-        #     webApp = container "Web Application" {
-        #         router = component "Router" "Handles HTTP routing" "Express"
-        #         controller = component "Controller" "Handles business logic"
-        #         router -> controller "Delegates to"
-        #     }
+        # C2 — Containers: applications, databases, services
+        # container softwareSystem "C2_Containers" {
+        #     include *
+        #     autoLayout
         # }
-    }
 
-    views {
-        component webApp "Components" {
-            include *
-            autoLayout
-        }
+        # C3 — Components: modules inside a container
+        # component webApp "C3_Components" {
+        #     include *
+        #     autoLayout
+        # }
 
         theme default
     }
 
 }
-`,
-  'c4.dsl': `workspace "Code" "C4 - Code diagram" {
+`;
 
-    model {
-        # Define code-level elements (classes, interfaces) here
-        # This level is rarely needed — use only when class/function-level
-        # design is explicitly part of the architectural decision.
-    }
 
-    views {
-        theme default
-    }
-
-}
-`,
-};
 
 export function createArchCommand(): Command {
   const arch = new Command('arch').description('Architecture tracking commands (C4 diagrams and ADRs)');
@@ -131,12 +89,10 @@ export function createArchCommand(): Command {
       await fs.writeFile(path.join(decisionsDir, '.gitkeep'), '', 'utf-8');
       await fs.writeFile(path.join(archiveDir, '.gitkeep'), '', 'utf-8');
 
-      // Write C4 stubs
-      for (const [filename, content] of Object.entries(STUBS)) {
-        await fs.writeFile(path.join(archDir, filename), content, 'utf-8');
-      }
+      // Write the single combined C4 architecture file
+      await fs.writeFile(path.join(archDir, ARCH_FILENAME), ARCH_STUB, 'utf-8');
 
-      console.log(chalk.green('✓') + ' Created openspec/arch/ with C4 Structurizr stubs.');
+      console.log(chalk.green('✓') + ` Created openspec/arch/${ARCH_FILENAME} with C4 Structurizr stubs.`);
       console.log(
         `\nNext step: set ${chalk.cyan('schema: arch-driven')} in openspec/config.yaml to enable arch tracking in changes.`
       );
