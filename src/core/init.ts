@@ -211,11 +211,11 @@ export class InitCommand {
       return undefined;
     }
 
-    if (this.profileOverride === 'core' || this.profileOverride === 'custom') {
+    if (this.profileOverride === 'core' || this.profileOverride === 'extended' || this.profileOverride === 'custom') {
       return this.profileOverride;
     }
 
-    throw new Error(`Invalid profile "${this.profileOverride}". Available profiles: core, custom`);
+    throw new Error(`Invalid profile "${this.profileOverride}". Available profiles: core, extended, custom`);
   }
 
   // ═══════════════════════════════════════════════════════════

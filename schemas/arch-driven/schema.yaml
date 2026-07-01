@@ -1,6 +1,6 @@
 name: arch-driven
 version: 1
-description: OpenSpec workflow with C4 architecture tracking - proposal → specs → design → tasks → arch
+description: OpenSpec workflow with C4 architecture tracking - proposal → arch + specs → design → tasks
 artifacts:
   - id: proposal
     generates: proposal.md
@@ -92,6 +92,9 @@ artifacts:
     generates: design.md
     description: Technical design document with implementation details
     template: design.md
+    requires:
+      - proposal
+      - arch
     instruction: |
       Create the design document that explains HOW to implement the change.
 
@@ -113,8 +116,6 @@ artifacts:
       Reference the proposal for motivation and specs for requirements.
 
       Good design docs explain the "why" behind technical decisions.
-    requires:
-      - proposal
 
   - id: tasks
     generates: tasks.md
@@ -156,6 +157,8 @@ artifacts:
     description: C4 architecture diagrams and ADRs for this change
     template: arch
     optional: true
+    requires:
+      - proposal
     instruction: |
       Update the C4 architecture diagrams and record architectural decisions for this change.
 
@@ -191,8 +194,6 @@ artifacts:
 
       If an ADR supersedes an existing one, add `Supersedes: ADR-NNNN` to the new ADR's header
       (below Status and Date). The archive command will move the old ADR to decisions/archive/.
-    requires:
-      - design
 
 apply:
   requires: [tasks]

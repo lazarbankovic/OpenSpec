@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 import {
   CORE_WORKFLOWS,
+  EXTENDED_WORKFLOWS,
   ALL_WORKFLOWS,
   getProfileWorkflows,
 } from '../../src/core/profiles.js';
@@ -14,6 +15,18 @@ describe('profiles', () => {
 
     it('should be a subset of ALL_WORKFLOWS', () => {
       for (const workflow of CORE_WORKFLOWS) {
+        expect(ALL_WORKFLOWS).toContain(workflow);
+      }
+    });
+  });
+
+  describe('EXTENDED_WORKFLOWS', () => {
+    it('should contain core workflows plus verify and onboard', () => {
+      expect(EXTENDED_WORKFLOWS).toEqual([...CORE_WORKFLOWS, 'verify', 'onboard']);
+    });
+
+    it('should be a subset of ALL_WORKFLOWS', () => {
+      for (const workflow of EXTENDED_WORKFLOWS) {
         expect(ALL_WORKFLOWS).toContain(workflow);
       }
     });
@@ -42,6 +55,16 @@ describe('profiles', () => {
     it('should return core workflows for core profile even if customWorkflows provided', () => {
       const result = getProfileWorkflows('core', ['new', 'apply']);
       expect(result).toEqual(CORE_WORKFLOWS);
+    });
+
+    it('should return extended workflows for extended profile', () => {
+      const result = getProfileWorkflows('extended');
+      expect(result).toEqual(EXTENDED_WORKFLOWS);
+    });
+
+    it('should ignore customWorkflows for extended profile', () => {
+      const result = getProfileWorkflows('extended', ['new', 'apply']);
+      expect(result).toEqual(EXTENDED_WORKFLOWS);
     });
 
     it('should return custom workflows for custom profile', () => {
