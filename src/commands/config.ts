@@ -471,8 +471,18 @@ export function registerConfigCommand(program: Command): void {
         return;
       }
 
+      // Preset shortcut: `openspec config profile extended`
+      if (preset === 'extended') {
+        const config = getGlobalConfig();
+        config.profile = 'extended';
+        config.workflows = [...EXTENDED_WORKFLOWS];
+        saveGlobalConfig(config);
+        printConfigProfileApplyGuidance();
+        return;
+      }
+
       if (preset) {
-        console.error(`Error: Unknown profile preset "${preset}". Available presets: core`);
+        console.error(`Error: Unknown profile preset "${preset}". Available presets: core, extended`);
         process.exitCode = 1;
         return;
       }
